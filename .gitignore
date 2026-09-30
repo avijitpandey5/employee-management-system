@@ -1,0 +1,29 @@
+# Java / Spring Boot
+backend/target/
+*.class
+
+# Environment / Secrets
+.env
+.env.*
+application-local.properties
+application-prod.properties
+
+# Uploaded files
+backend/uploads/
+
+# Node / React
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
