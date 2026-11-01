@@ -1,9 +1,12 @@
+
 package com.employee.management.controller;
 
 import com.employee.management.dto.EmployeeRequest;
 import com.employee.management.dto.EmployeeResponse;
 import com.employee.management.service.EmployeeService;
+
 import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +23,10 @@ public class EmployeeController {
         this.employeeService = employeeService;
     }
 
+    // ==========================================
+    // GET ALL EMPLOYEES - ADMIN
+    // ==========================================
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<EmployeeResponse>> getAllEmployees() {
@@ -28,6 +35,23 @@ public class EmployeeController {
                 employeeService.getAllEmployees()
         );
     }
+
+    // ==========================================
+    // GET MY PROFILE - ALL AUTHENTICATED ROLES
+    // ==========================================
+
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
+    public ResponseEntity<EmployeeResponse> getMyProfile() {
+
+        return ResponseEntity.ok(
+                employeeService.getMyProfile()
+        );
+    }
+
+    // ==========================================
+    // GET EMPLOYEE BY ID - ADMIN
+    // ==========================================
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -39,6 +63,10 @@ public class EmployeeController {
         );
     }
 
+    // ==========================================
+    // CREATE EMPLOYEE - ADMIN
+    // ==========================================
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EmployeeResponse> createEmployee(
@@ -48,6 +76,10 @@ public class EmployeeController {
                 employeeService.createEmployee(request)
         );
     }
+
+    // ==========================================
+    // UPDATE EMPLOYEE - ADMIN
+    // ==========================================
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -59,6 +91,10 @@ public class EmployeeController {
                 employeeService.updateEmployee(id, request)
         );
     }
+
+    // ==========================================
+    // DELETE EMPLOYEE - ADMIN
+    // ==========================================
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")

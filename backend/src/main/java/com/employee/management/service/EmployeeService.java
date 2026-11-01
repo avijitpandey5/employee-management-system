@@ -1,14 +1,22 @@
+
 package com.employee.management.service;
 
 import com.employee.management.dto.EmployeeRequest;
 import com.employee.management.dto.EmployeeResponse;
 import com.employee.management.entity.Department;
 import com.employee.management.entity.Employee;
+import com.employee.management.entity.User;
 import com.employee.management.exception.ResourceNotFoundException;
 import com.employee.management.repository.DepartmentRepository;
 import com.employee.management.repository.EmployeeRepository;
+import com.employee.management.repository.UserRepository;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -17,14 +25,21 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
+    private final UserRepository userRepository;
 
     public EmployeeService(
             EmployeeRepository employeeRepository,
-            DepartmentRepository departmentRepository) {
+            DepartmentRepository departmentRepository,
+            UserRepository userRepository) {
 
         this.employeeRepository = employeeRepository;
         this.departmentRepository = departmentRepository;
+        this.userRepository = userRepository;
     }
+
+    // ==========================================
+    // GET ALL EMPLOYEES - ADMIN
+    // ==========================================
 
     @Transactional(readOnly = true)
     public List<EmployeeResponse> getAllEmployees() {
@@ -34,6 +49,10 @@ public class EmployeeService {
                 .map(this::mapToResponse)
                 .toList();
     }
+
+    // ==========================================
+    // GET EMPLOYEE BY ID - ADMIN
+    // ==========================================
 
     @Transactional(readOnly = true)
     public EmployeeResponse getEmployeeById(Long id) {
@@ -48,9 +67,63 @@ public class EmployeeService {
         return mapToResponse(employee);
     }
 
+    // ==========================================
+    // GET MY PROFILE - AUTHENTICATED USER
+    // ==========================================
+
+    @Transactional(readOnly = true)
+    public EmployeeResponse getMyProfile() {
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        if (authentication == null ||
+                !authentication.isAuthenticated() ||
+                "anonymousUser".equals(authentication.getPrincipal())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Authentication required"
+            );
+        }
+
+        String username = authentication.getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.UNAUTHORIZED,
+                                "Authenticated user not found"
+                        )
+                );
+
+        if (user.getEmployee() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "No employee profile is linked to this account"
+            );
+        }
+
+        Long employeeId = user.getEmployee().getId();
+
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Employee profile not found"
+                        )
+                );
+
+        return mapToResponse(employee);
+    }
+
+    // ==========================================
+    // CREATE EMPLOYEE - ADMIN
+    // ==========================================
+
     @Transactional
-    public EmployeeResponse createEmployee(
-            EmployeeRequest request) {
+    public EmployeeResponse createEmployee(EmployeeRequest request) {
 
         if (employeeRepository.existsByEmpCode(
                 request.getEmpCode())) {
@@ -117,6 +190,10 @@ public class EmployeeService {
         return mapToResponse(savedEmployee);
     }
 
+    // ==========================================
+    // UPDATE EMPLOYEE - ADMIN
+    // ==========================================
+
     @Transactional
     public EmployeeResponse updateEmployee(
             Long id,
@@ -131,7 +208,7 @@ public class EmployeeService {
 
         if (!employee.getEmpCode().equals(request.getEmpCode())
                 && employeeRepository.existsByEmpCode(
-                request.getEmpCode())) {
+                        request.getEmpCode())) {
 
             throw new RuntimeException(
                     "Employee code already exists: "
@@ -141,7 +218,7 @@ public class EmployeeService {
 
         if (!employee.getEmail().equals(request.getEmail())
                 && employeeRepository.existsByEmail(
-                request.getEmail())) {
+                        request.getEmail())) {
 
             throw new RuntimeException(
                     "Email already exists: "
@@ -201,6 +278,10 @@ public class EmployeeService {
         return mapToResponse(updatedEmployee);
     }
 
+    // ==========================================
+    // DELETE EMPLOYEE - ADMIN
+    // ==========================================
+
     @Transactional
     public void deleteEmployee(Long id) {
 
@@ -214,11 +295,13 @@ public class EmployeeService {
         employeeRepository.delete(employee);
     }
 
-    private EmployeeResponse mapToResponse(
-            Employee employee) {
+    // ==========================================
+    // ENTITY TO RESPONSE MAPPING
+    // ==========================================
 
-        EmployeeResponse response =
-                new EmployeeResponse();
+    private EmployeeResponse mapToResponse(Employee employee) {
+
+        EmployeeResponse response = new EmployeeResponse();
 
         response.setId(employee.getId());
         response.setEmpCode(employee.getEmpCode());

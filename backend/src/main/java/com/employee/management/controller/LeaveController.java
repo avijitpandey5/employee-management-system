@@ -49,7 +49,7 @@ public class LeaveController {
     // GET LEAVES BY EMPLOYEE
     // =========================
     @GetMapping("/employee/{employeeId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<List<LeaveResponse>> getLeavesByEmployee(
             @PathVariable Long employeeId) {
 

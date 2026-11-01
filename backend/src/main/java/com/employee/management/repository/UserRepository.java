@@ -1,3 +1,4 @@
+
 package com.employee.management.repository;
 
 import com.employee.management.entity.User;
@@ -10,4 +11,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 
     boolean existsByUsername(String username);
+
+    boolean existsByEmployee_Id(Long employeeId);
 }
